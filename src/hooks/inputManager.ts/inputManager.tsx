@@ -1,24 +1,75 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GridItem, Position, TwoDimensionalCoords } from '../../types';
 import { InputManagerProps } from './types';
 
 const DefaultLayout: GridItem[] = [
-  { i: '1', x: 0, y: 0, w: 4, h: 1 },
-  { i: '2', x: 4, y: 0, w: 4, h: 1 },
-  { i: '3', x: 8, y: 0, w: 4, h: 1 },
+  { i: '1', x: 0, y: 0, w: 3, h: 3 },
+  { i: '2', x: 3, y: 0, w: 3, h: 3 },
+  { i: '3', x: 6, y: 0, w: 3, h: 3 },
+  { i: '4', x: 9, y: 0, w: 3, h: 3 },
 
-  { i: '4', x: 0, y: 1, w: 4, h: 1 },
-  { i: '5', x: 4, y: 1, w: 4, h: 1 },
-  { i: '6', x: 8, y: 1, w: 4, h: 1 },
+  { i: '5', x: 0, y: 1, w: 6, h: 1 },
+  { i: '6', x: 6, y: 1, w: 6, h: 1 },
 
-  { i: '7', x: 0, y: 2, w: 4, h: 1 },
-  { i: '8', x: 4, y: 2, w: 4, h: 1 },
-  { i: '9', x: 8, y: 2, w: 4, h: 1 }
+  { i: '7', x: 0, y: 2, w: 4, h: 4 },
+  { i: '8', x: 4, y: 2, w: 4, h: 3 },
+  { i: '9', x: 8, y: 2, w: 1, h: 1 }
 ];
 
+const DefaultCursorPositon: GridItem = { i: 'cursor', x: 0, y: 0, w: 1, h: 1 };
+
+const generateLayout = (currentBreakpoint?: string) => {
+  return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => {
+    const y = Math.ceil(Math.random() * 4) + 1;
+    const w = Math.ceil(Math.random() * 6) + 1;
+
+    return {
+      x: Math.round(Math.random() * 5) * 2,
+      y: Math.floor(i / 6) * y,
+      w: w,
+      h: y,
+      i: i.toString()
+    };
+  });
+};
+
 export function useInputManager({}: InputManagerProps) {
-  const [cursor, setCursor] = useState<Position>({ x: 0, y: 1, w: 1, h: 1 });
+  const [cursor, setCursor] = useState<GridItem>(DefaultCursorPositon);
   const [layout, setLayout] = useState<GridItem[]>(DefaultLayout);
+  const [layouts, setLayouts] = useState<any>();
+
+  const generateNewLayout = (currentBreakpoint: string) => {
+    const newLayout = generateLayout(currentBreakpoint);
+    // let newCursorPosition = console.log(newLayout, DefaultCursorPositon);
+    //TODO workout if the default cursor positon is valid, or do we need to find a valid tile
+    setLayout(newLayout);
+    setLayouts({
+      ...layouts,
+      ...{
+        [currentBreakpoint]: newLayout
+      }
+    });
+  };
+
+  const generateDom = (breakpoint: string = 'lg') => {
+    return layout.map((item) => (
+      <div
+        style={{
+          zIndex: item.i === 'cursor' ? 100 : 0,
+          backgroundColor:
+            item.i === 'cursor'
+              ? 'green'
+              : checkCursorCollision(item, cursor)
+              ? 'red'
+              : 'gray'
+        }}
+        key={item.i?.toString()}
+        data-grid={item}
+      >
+        Item {item.i}
+      </div>
+    ));
+  };
 
   const checkCursorCollision = (el: GridItem, cur: Position): boolean => {
     if (
@@ -35,7 +86,6 @@ export function useInputManager({}: InputManagerProps) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const onKeyPressHandler = (event: KeyboardEvent) => {
-    console.log(event);
     const { code } = event;
 
     const cursorCurrent = cursor;
@@ -43,87 +93,152 @@ export function useInputManager({}: InputManagerProps) {
       checkCursorCollision(gridItem, cursor)
     )[0];
 
+    const newCursorPosition = {
+      ...cursor
+    };
+
+    const distanceToMove = 1;
+    let validPositionFound = false;
+
     if (code === 'KeyW') {
-      const direction: TwoDimensionalCoords = { x: 0, y: -1 };
+      if (cursorCurrent.y === 0) return;
 
-      if (cursorCurrent.y + direction.y < 0) return; // You cant move here
-      const size = currentGridItem.h;
+      do {
+        const direction: TwoDimensionalCoords = { x: 0, y: -1 };
 
-      const newPosition = {
-        ...cursor,
-        y: cursor.y - size
-      };
+        newCursorPosition.y =
+          newCursorPosition.y + distanceToMove * direction.y;
 
-      const potentiallySelected = {
-        ...currentGridItem,
-        y: newPosition.y
-      };
+        if (newCursorPosition.y < 0) break;
 
-      if (checkCursorCollision(potentiallySelected, newPosition)) {
-        return setCursor(newPosition);
-      }
+        // Are we on the same grid element?
+        if (checkCursorCollision(currentGridItem, newCursorPosition)) {
+          console.log('On the same tile');
+          validPositionFound = false;
+          continue;
+        }
+
+        //Does the new position collide with any element in the array that isnt the current
+        const layoutExludingCurrent = layout.filter(
+          (item) => item.i !== currentGridItem.i
+        );
+        const gridSearchResults = layoutExludingCurrent.filter((gridItem) =>
+          checkCursorCollision(gridItem, newCursorPosition)
+        );
+
+        if (gridSearchResults.length === 0) {
+          validPositionFound = false;
+        } else if (gridSearchResults.length === 1) {
+          validPositionFound = true;
+        }
+      } while (newCursorPosition.y >= 0 && validPositionFound === false);
     }
 
     if (code === 'KeyS') {
-      const direction: TwoDimensionalCoords = { x: 0, y: 1 };
+      const yPosList = layout.map((item) => {
+        return item.y + item.h;
+      });
+      const maxY = Math.max(...yPosList);
 
-      if (cursorCurrent.y + direction.y < 0) return; // You cant move here
-      const size = currentGridItem.h;
+      do {
+        const direction: TwoDimensionalCoords = { x: 0, y: 1 };
 
-      const newPosition = {
-        ...cursor,
-        y: cursor.y + size
-      };
+        newCursorPosition.y =
+          newCursorPosition.y + distanceToMove * direction.y;
 
-      const potentiallySelected = {
-        ...currentGridItem,
-        y: newPosition.y
-      };
+        if (newCursorPosition.y > maxY) break;
 
-      if (checkCursorCollision(potentiallySelected, newPosition)) {
-        return setCursor(newPosition);
-      }
+        // Are we on the same grid element?
+        if (checkCursorCollision(currentGridItem, newCursorPosition)) {
+          console.log('On the same tile');
+          validPositionFound = false;
+          continue;
+        }
+        //Does the new position collide with any element in the array that isnt the current
+        const layoutExludingCurrent = layout.filter(
+          (item) => item.i !== currentGridItem.i
+        );
+        const gridSearchResults = layoutExludingCurrent.filter((gridItem) =>
+          checkCursorCollision(gridItem, newCursorPosition)
+        );
+
+        if (gridSearchResults.length === 0) {
+          validPositionFound = false;
+        } else if (gridSearchResults.length === 1) {
+          validPositionFound = true;
+        }
+      } while (newCursorPosition.y <= maxY && validPositionFound === false);
     }
 
     if (code === 'KeyA') {
-      const direction: TwoDimensionalCoords = { x: -1, y: 0 };
-      if (cursorCurrent.x + direction.x < 0) return; // You cant move here
-      const size = currentGridItem.w;
+      if (cursorCurrent.x === 0) return;
 
-      const newPosition = {
-        ...cursor,
-        x: cursor.x + size
-      };
+      do {
+        const direction: TwoDimensionalCoords = { x: -1, y: 0 };
 
-      const potentiallySelected = {
-        ...currentGridItem,
-        x: newPosition.x
-      };
+        newCursorPosition.x =
+          newCursorPosition.x + distanceToMove * direction.x;
 
-      if (checkCursorCollision(potentiallySelected, newPosition)) {
-        return setCursor(newPosition);
-      }
+        if (newCursorPosition.x < 0) break;
+
+        // Are we on the same grid element?
+        if (checkCursorCollision(currentGridItem, newCursorPosition)) {
+          console.log('On the same tile');
+          validPositionFound = false;
+          continue;
+        }
+        //Does the new position collide with any element in the array that isnt the current
+        const layoutExludingCurrent = layout.filter(
+          (item) => item.i !== currentGridItem.i
+        );
+        const gridSearchResults = layoutExludingCurrent.filter((gridItem) =>
+          checkCursorCollision(gridItem, newCursorPosition)
+        );
+
+        if (gridSearchResults.length === 0) {
+          validPositionFound = false;
+        } else if (gridSearchResults.length === 1) {
+          validPositionFound = true;
+        }
+      } while (newCursorPosition.x >= 0 && validPositionFound === false);
     }
 
     if (code === 'KeyD') {
-      const direction: TwoDimensionalCoords = { x: 1, y: 0 };
-      //TODO this needs to change depending on the current screen size - different cols for different screens bruh
-      if (cursorCurrent.x + direction.x > 12) return; // You cant move here
-      const size = currentGridItem.w;
+      const lastCol = 12; // Get this vaule depending on the current breakpoint
+      if (cursorCurrent.x === lastCol) return;
 
-      const newPosition = {
-        ...cursor,
-        x: cursor.x + size
-      };
+      do {
+        const direction: TwoDimensionalCoords = { x: 1, y: 0 };
 
-      const potentiallySelected = {
-        ...currentGridItem,
-        x: newPosition.x
-      };
+        newCursorPosition.x =
+          newCursorPosition.x + distanceToMove * direction.x;
 
-      if (checkCursorCollision(potentiallySelected, newPosition)) {
-        return setCursor(newPosition);
-      }
+        if (newCursorPosition.x > lastCol) break;
+
+        // Are we on the same grid element?
+        if (checkCursorCollision(currentGridItem, newCursorPosition)) {
+          console.log('On the same tile');
+          validPositionFound = false;
+          continue;
+        }
+        //Does the new position collide with any element in the array that isnt the current
+        const layoutExludingCurrent = layout.filter(
+          (item) => item.i !== currentGridItem.i
+        );
+        const gridSearchResults = layoutExludingCurrent.filter((gridItem) =>
+          checkCursorCollision(gridItem, newCursorPosition)
+        );
+
+        if (gridSearchResults.length === 0) {
+          validPositionFound = false;
+        } else if (gridSearchResults.length === 1) {
+          validPositionFound = true;
+        }
+      } while (newCursorPosition.x <= lastCol && validPositionFound === false);
+    }
+
+    if (validPositionFound) {
+      setCursor(newCursorPosition);
     }
   };
 
@@ -137,6 +252,10 @@ export function useInputManager({}: InputManagerProps) {
   return {
     cursor,
     checkCursorCollision,
-    layout
+    layouts,
+    setLayout,
+    setLayouts,
+    generateDom,
+    generateNewLayout
   };
 }

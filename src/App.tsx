@@ -1,42 +1,72 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { GridItem } from './types';
 import useInputManager from './hooks/inputManager.ts';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
-// create a class to manage keyboard input - maybe a hook ?
-// keyboard navigation with arrow keys and WSAD
-// create a cursor, which will be on one card then when move, calculate whats avaiable to move to
+// make functio n to generate random components and place them prooerly
+// make sure navigation is working
+
+//define structure for the layours
+// make the grid repsonsive
+// make the components responsive
+
+// read me section aout the last bit
+// have a context provider which tracks children elements
 
 function App() {
-  const { cursor, checkCursorCollision, layout } = useInputManager({});
+  const [breakpoint, setBreakpoint] = useState('lg');
+  const {
+    generateDom,
+    generateNewLayout,
+    layouts,
+    cursor,
+    setLayout,
+    setLayouts
+  } = useInputManager({});
 
-  const createElement = (el: GridItem): React.ReactNode => {
-    const i = el.i;
-    return (
-      <div
-        style={{
-          backgroundColor: checkCursorCollision(el, cursor) ? 'red' : 'gray'
-        }}
-        key={i}
-        data-grid={el}
-      >
-        Item {el.i}
-      </div>
-    );
+  const onBreakpointChange = (b: string) => setBreakpoint(b);
+
+  const onLayoutChange = (a: any, b: any) => {
+    setLayout(a);
+    setLayouts(b);
   };
+
+  useEffect(() => {
+    console.log(cursor);
+  }, [cursor]);
+
   return (
-    <ResponsiveReactGridLayout
-      cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-      rowHeight={100}
-      preventCollision={true}
-      isDraggable={false}
-      isResizable={false}
-      compactType="vertical"
-    >
-      {layout && layout.map((el) => createElement(el))}
-    </ResponsiveReactGridLayout>
+    <>
+      <button
+        onClick={() => {
+          generateNewLayout(breakpoint);
+        }}
+      >
+        Generate new layout
+      </button>
+
+      
+      <div>h: {cursor.h}</div>
+      <div>w: {cursor.w}</div>
+      <div>x: {cursor.x}</div>
+      <div>y: {cursor.y}</div>
+
+      <ResponsiveReactGridLayout
+        cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+        rowHeight={100}
+        // preventCollision={true}
+        isDraggable={false}
+        isResizable={false}
+        // compactType="vertical"
+        onBreakpointChange={onBreakpointChange}
+        onLayoutChange={onLayoutChange}
+        layouts={layouts}
+      >
+        {generateDom(breakpoint)}
+      </ResponsiveReactGridLayout>
+    </>
   );
 }
 
