@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
+import Toolbar, {
+  ToolbarSection,
+  ToolbarButton,
+  ToolbarStat
+} from './components/toolbar';
 import useInputManager from './hooks/inputManager.ts';
 import { CompactType } from './types';
 
@@ -12,7 +17,6 @@ function App() {
 
   const {
     generateDom,
-    generateNewLayout,
     layouts,
     cursor,
     setLayout,
@@ -28,41 +32,32 @@ function App() {
     setLayouts(b);
   };
 
-  const onCompactChange = () => {
-    console.log(compact);
-    setCompact(
-      compact === 'horizontal'
-        ? 'vertical'
-        : compact === 'vertical'
-        ? null
-        : 'horizontal'
-    );
-  };
-
   return (
-    <>
-      <button
-        onClick={() => {
-          generateNewLayout(breakpoint);
-        }}
-      >
-        Generate new layout
-      </button>
-
-      <button
-        onClick={() => {
-          onAddItem();
-        }}
-      >
-        Add new component to grid
-      </button>
-
-      <button onClick={() => onCompactChange()}>Change Compact Type</button>
-
-      <div>h: {cursor.h}</div>
-      <div>w: {cursor.w}</div>
-      <div>x: {cursor.x}</div>
-      <div>y: {cursor.y}</div>
+    <div className="container">
+      <Toolbar>
+        <ToolbarSection title="Actions">
+          {/* <ToolbarButton
+          onClick={() => {
+            generateNewLayout(breakpoint);
+          }}
+          >
+          Generate new layout
+        </ToolbarButton> */}
+          <ToolbarButton
+            onClick={() => {
+              onAddItem();
+            }}
+          >
+            Add random component
+          </ToolbarButton>
+        </ToolbarSection>
+        <ToolbarSection title="cursor">
+          <ToolbarStat label="H:" value={cursor.h.toString()} />
+          <ToolbarStat label="W:" value={cursor.w.toString()} />
+          <ToolbarStat label="X:" value={cursor.x.toString()} />
+          <ToolbarStat label="Y:" value={cursor.y.toString()} />
+        </ToolbarSection>
+      </Toolbar>
 
       <ResponsiveReactGridLayout
         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
@@ -77,7 +72,7 @@ function App() {
       >
         {generateDom(breakpoint)}
       </ResponsiveReactGridLayout>
-    </>
+    </div>
   );
 }
 
