@@ -39,8 +39,8 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Task Explanations
+- I originally would have liked to create my own grid system but decided to use [react-grid-layout](https://github.com/react-grid-layout/react-grid-layout). This library does not use CSS grid or flexbox but rather CSS transforms to position objects. 
+- Movement around the UI is calculated based on a few criteria to find a valid position to move to. This needs a good amount of work still to make this effective.
+- Task 2: In theory I understand what could work but as I have never developed something similar, I left this out. What I would do though would be to have a hook with a context provider that can track all elements being rendered within it. Then based on IDs or references, move navigation controls to the modal/pop-up new component from the grid.
+- I have a left a number of things commented out that I was working on
