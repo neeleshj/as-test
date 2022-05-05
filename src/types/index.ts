@@ -13,3 +13,5 @@ export interface Position {
 export interface GridItem extends Position {
   i?: string;
 }
+
+export type CompactType = 'horizontal' | 'vertical' | null | undefined;

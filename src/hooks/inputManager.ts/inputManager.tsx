@@ -51,6 +51,31 @@ export function useInputManager({}: InputManagerProps) {
     });
   };
 
+  const onAddItem = () => {
+    const max = 12; //TODO update using breakpoint value
+
+    const ids = layout.map((item) => parseInt(item.i || '0'));
+    const maxId = Math.max(...ids);
+
+    const item = {
+      x: Math.round(Math.random() * 5) * 2,
+      y: Infinity, // Place at the bottom
+      w: Math.floor(Math.random() * (max - 1 + 1) + 1),
+      h: Math.floor(Math.random() * (3 - 1 + 1) + 1),
+      i: (maxId + 1).toString()
+    };
+
+    console.log(layout.length, item);
+
+    setLayout([...layout, ...[item]]);
+  };
+
+  const onRemoveItem = (toRemove: GridItem) => {
+    setLayout(layout.filter((item) => item.i !== toRemove.i));
+    //TODO update layouts too - need break point
+    //TODO update cursor -> it might be over an item that has been removed
+  };
+
   const generateDom = (breakpoint: string = 'lg') => {
     return layout.map((item) => (
       <div
@@ -67,6 +92,18 @@ export function useInputManager({}: InputManagerProps) {
         data-grid={item}
       >
         Item {item.i}
+        <span
+          className="remove"
+          style={{
+            position: 'absolute',
+            right: '2px',
+            top: 0,
+            cursor: 'pointer'
+          }}
+          onClick={() => onRemoveItem(item)}
+        >
+          x
+        </span>
       </div>
     ));
   };
@@ -113,7 +150,6 @@ export function useInputManager({}: InputManagerProps) {
 
         // Are we on the same grid element?
         if (checkCursorCollision(currentGridItem, newCursorPosition)) {
-          console.log('On the same tile');
           validPositionFound = false;
           continue;
         }
@@ -150,7 +186,6 @@ export function useInputManager({}: InputManagerProps) {
 
         // Are we on the same grid element?
         if (checkCursorCollision(currentGridItem, newCursorPosition)) {
-          console.log('On the same tile');
           validPositionFound = false;
           continue;
         }
@@ -183,7 +218,6 @@ export function useInputManager({}: InputManagerProps) {
 
         // Are we on the same grid element?
         if (checkCursorCollision(currentGridItem, newCursorPosition)) {
-          console.log('On the same tile');
           validPositionFound = false;
           continue;
         }
@@ -217,7 +251,6 @@ export function useInputManager({}: InputManagerProps) {
 
         // Are we on the same grid element?
         if (checkCursorCollision(currentGridItem, newCursorPosition)) {
-          console.log('On the same tile');
           validPositionFound = false;
           continue;
         }
@@ -256,6 +289,7 @@ export function useInputManager({}: InputManagerProps) {
     setLayout,
     setLayouts,
     generateDom,
-    generateNewLayout
+    generateNewLayout,
+    onAddItem
   };
 }
